@@ -1,0 +1,69 @@
+<div class="chatbot-wrapper">
+  <!-- Chat Toggle Button -->
+  <button class="chat-toggle-btn" (click)="toggleChat()" [class.active]="isChatOpen">
+    <span *ngIf="!isChatOpen">💬 Ask Questions</span>
+    <span *ngIf="isChatOpen">✕</span>
+  </button>
+
+  <!-- Chat Container -->
+  <div class="chatbot-container" [class.open]="isChatOpen">
+    <div class="chat-header">
+      <h3>💬 Resume Assistant</h3>
+      <p>Ask me anything about your resume analysis!</p>
+    </div>
+
+    <div class="chat-messages">
+      <div *ngFor="let message of messages" class="message" [class]="message.type">
+        <div class="message-content">
+          <p>{{ message.content }}</p>
+          
+          <div *ngIf="message.suggestions" class="suggestions">
+            <h4>💡 Suggestions:</h4>
+            <ul>
+              <li *ngFor="let suggestion of message.suggestions">{{ suggestion }}</li>
+            </ul>
+          </div>
+          
+          <div *ngIf="message.followUpQuestions" class="follow-up-questions">
+            <h4>❓ You might also ask:</h4>
+            <div class="quick-questions">
+              <button
+                *ngFor="let question of message.followUpQuestions"
+                class="quick-question-btn"
+                (click)="handleQuickQuestion(question)"
+              >
+                {{ question }}
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="message-time">
+          {{ message.timestamp | date:'shortTime' }}
+        </div>
+      </div>
+      
+      <div *ngIf="isLoading" class="message bot loading">
+        <div class="typing-indicator">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <input
+        type="text"
+        [(ngModel)]="currentQuestion"
+        placeholder="Ask me anything about your resume..."
+        (keypress)="onKeyPress($event)"
+        [disabled]="isLoading"
+      />
+      <button 
+        (click)="sendMessage(currentQuestion)"
+        [disabled]="isLoading || !currentQuestion.trim()"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+</div>
