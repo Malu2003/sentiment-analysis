@@ -1,1 +1,21 @@
-<router-outlet></router-outlet>
+<div class="app-container">
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="logo" (click)="goHome()">
+        🎭 Sentiment Analyzer
+      </div>
+      <div class="nav-links">
+        <button class="nav-btn" (click)="goHome()">Home</button>
+        <button class="nav-btn" (click)="goToSentiment()">Analyze</button>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+  
+  <footer class="footer">
+    <p>&copy; 2025 Sentiment Analysis Tool - Powered by AI</p>
+  </footer>
+</div>

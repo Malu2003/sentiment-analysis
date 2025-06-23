@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home/home.component';
-import { ResumeFormComponent } from './components/resume-form/resume-form.component';
-import { ResultsComponent } from './components/results/results.component';
+import { SentimentComponent } from './components/sentiment/sentiment.component';
 
 export const routes: Routes = [
     {path:"",component: HomeComponent},
-    {path:"resume_form",component: ResumeFormComponent},
-    {path:"results",component: ResultsComponent},
+    {path:"sentiment",component: SentimentComponent},
+    {path:"sentiment-results",component: SentimentComponent},
+    {path:"**",redirectTo: ""},
 ];

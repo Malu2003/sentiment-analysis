@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "sentiment-analysis-backend",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -33,6 +33,7 @@
     "docx-parser": "^0.2.1",
     "dotenv": "^16.5.0",
     "multer": "^2.0.1",
+    "node-fetch": "^3.3.2",
     "openai": "^5.5.0",
     "pdf-parse": "^1.1.1",
     "reflect-metadata": "^0.2.2",
@@ -49,6 +50,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
+    "@types/node-fetch": "^2.6.12",
     "@types/supertest": "^6.0.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
