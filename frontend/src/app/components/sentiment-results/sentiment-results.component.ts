@@ -1,304 +1,558 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-sentiment-results',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="sentiment-results-container" *ngIf="!loading">
-      <div class="header">
-        <h1>Sentiment Analysis Results</h1>
-        <p class="target">Analysis for: <strong>{{ target }}</strong></p>
-      </div>
-
-      <div class="results-grid">
-        <!-- Overall Sentiment Card -->
-        <div class="result-card sentiment-card">
-          <h3>Overall Sentiment</h3>
-          <div class="sentiment-indicator" [ngClass]="results.overallSentiment">
-            <span class="sentiment-emoji">{{ getSentimentEmoji(results.overallSentiment) }}</span>
-            <span class="sentiment-text">{{ results.overallSentiment | titlecase }}</span>
-          </div>
-          <div class="confidence">
-            <span>Confidence: {{ results.confidenceScore }}%</span>
-            <div class="confidence-bar">
-              <div class="confidence-fill" [style.width.%]="results.confidenceScore"></div>
+    <div class="netflix-results-page" *ngIf="!loading">
+      <!-- Hero Section with Main Result -->
+      <div class="results-hero">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+          <div class="main-result">
+            <h1 class="target-title">{{ target }}</h1>
+            <div class="overall-sentiment" [ngClass]="results.overallSentiment">
+              <span class="sentiment-emoji">{{ getSentimentEmoji(results.overallSentiment) }}</span>
+              <span class="sentiment-text">{{ results.overallSentiment | titlecase }}</span>
+              <div class="confidence-badge">{{ results.confidenceScore }}% Confident</div>
             </div>
+            <p class="analysis-summary">
+              Based on analysis of social media discussions across multiple platforms
+            </p>
           </div>
         </div>
+      </div>
 
-        <!-- Emotions Breakdown -->
-        <div class="result-card emotions-card">
-          <h3>Emotion Analysis</h3>
-          <div class="emotions-grid">
-            <div class="emotion" *ngFor="let emotion of getEmotionEntries()">
-              <span class="emotion-name">{{ emotion.name | titlecase }}</span>
-              <div class="emotion-bar">
-                <div class="emotion-fill" [style.width.%]="emotion.value" [style.background-color]="getEmotionColor(emotion.name)"></div>
+      <!-- Content Sections -->
+      <div class="content-container">
+        <!-- Emotions Row -->
+        <div class="content-row">
+          <h2 class="row-title">Emotional Breakdown</h2>
+          <div class="emotions-scroll">
+            <div class="emotion-card" *ngFor="let emotion of getEmotionEntries()">
+              <div class="emotion-visual">
+                <div class="emotion-circle" [style.background]="getEmotionGradient(emotion.name)">
+                  <span class="emotion-emoji">{{ getEmotionEmoji(emotion.name) }}</span>
+                </div>
+                <div class="emotion-bar">
+                  <div class="emotion-fill" 
+                       [style.width.%]="emotion.value"
+                       [style.background]="getEmotionColor(emotion.name)">
+                  </div>
+                </div>
               </div>
-              <span class="emotion-value">{{ emotion.value }}%</span>
+              <h4>{{ emotion.name | titlecase }}</h4>
+              <p>{{ emotion.value }}%</p>
             </div>
           </div>
         </div>
 
-        <!-- Insights -->
-        <div class="result-card insights-card">
-          <h3>Key Insights</h3>
-          <ul class="insights-list">
-            <li *ngFor="let insight of results.insights" class="insight-item">
-              <i class="insight-icon">💡</i>
-              {{ insight }}
-            </li>
-          </ul>
+        <!-- Insights Row -->
+        <div class="content-row">
+          <h2 class="row-title">Key Insights</h2>
+          <div class="insights-grid">
+            <div class="insight-card" *ngFor="let insight of results.insights; let i = index">
+              <div class="insight-number">{{ i + 1 }}</div>
+              <div class="insight-content">
+                <p>{{ insight }}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Recommendations -->
-        <div class="result-card recommendations-card">
-          <h3>Recommendations</h3>
-          <ul class="recommendations-list">
-            <li *ngFor="let recommendation of results.recommendations" class="recommendation-item">
-              <i class="recommendation-icon">📈</i>
-              {{ recommendation }}
-            </li>
-          </ul>
+        <!-- Recommendations Row -->
+        <div class="content-row">
+          <h2 class="row-title">Strategic Recommendations</h2>
+          <div class="recommendations-grid">
+            <div class="recommendation-card" *ngFor="let recommendation of results.recommendations">
+              <div class="recommendation-icon">💡</div>
+              <div class="recommendation-content">
+                <p>{{ recommendation }}</p>
+              </div>
+              <div class="recommendation-action">
+                <button class="action-btn">Learn More</button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="actions">
-        <button class="btn secondary" (click)="analyzeAnother()">Analyze Another</button>
-        <button class="btn primary" (click)="goHome()">Back to Home</button>
+        <!-- Action Buttons -->
+        <div class="action-section">
+          <button class="netflix-btn primary" (click)="analyzeAnother()">
+            🔄 Analyze Another
+          </button>
+          <button class="netflix-btn secondary" (click)="goHome()">
+            🏠 Back to Home
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="loading-container" *ngIf="loading">
-      <div class="spinner"></div>
-      <p>Loading sentiment analysis results...</p>
+    <!-- Loading State -->
+    <div class="netflix-loading" *ngIf="loading">
+      <div class="loading-content">
+        <div class="netflix-spinner"></div>
+        <h2>Analyzing Sentiment...</h2>
+        <p>Processing data for <strong>{{ loadingTarget }}</strong></p>
+      </div>
     </div>
   `,
   styles: [`
-    .sentiment-results-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
+    .netflix-results-page {
+      background: #141414;
+      color: white;
+      min-height: 100vh;
+      padding-top: 60px;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-
-    .target {
-      font-size: 18px;
-      color: #666;
-    }
-
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .result-card {
-      background: white;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e1e8ed;
-    }
-
-    .sentiment-indicator {
+    .results-hero {
+      position: relative;
+      height: 50vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      margin: 20px 0;
+    }
+
+    .hero-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(229, 9, 20, 0.2), rgba(0, 0, 0, 0.8)),
+                  radial-gradient(circle at center, rgba(102, 126, 234, 0.1), transparent);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 800px;
+      padding: 0 2rem;
+    }
+
+    .target-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .overall-sentiment {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
     }
 
     .sentiment-emoji {
-      font-size: 48px;
+      font-size: 3rem;
     }
 
     .sentiment-text {
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 1.75rem;
+      font-weight: 600;
     }
 
-    .sentiment-indicator.positive .sentiment-text { color: #27ae60; }
-    .sentiment-indicator.negative .sentiment-text { color: #e74c3c; }
-    .sentiment-indicator.neutral .sentiment-text { color: #f39c12; }
+    .overall-sentiment.positive .sentiment-text { color: #4caf50; }
+    .overall-sentiment.negative .sentiment-text { color: #f44336; }
+    .overall-sentiment.neutral .sentiment-text { color: #ff9800; }
 
-    .confidence-bar {
-      width: 100%;
-      height: 8px;
-      background: #e1e8ed;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 5px;
+    .confidence-badge {
+      background: rgba(229, 9, 20, 0.8);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9rem;
     }
 
-    .confidence-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #3498db, #27ae60);
-      transition: width 0.3s ease;
+    .analysis-summary {
+      font-size: 1rem;
+      color: #b3b3b3;
+      line-height: 1.5;
     }
 
-    .emotions-grid {
+    .content-container {
+      padding: 0 2rem 3rem;
+    }
+
+    .content-row {
+      margin-bottom: 3rem;
+    }
+
+    .row-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      color: #ffffff;
+    }
+
+    .emotions-scroll {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      gap: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 1rem;
     }
 
-    .emotion {
+    .emotion-card {
+      min-width: 160px;
+      background: #222222;
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      transition: transform 0.3s ease;
+    }
+
+    .emotion-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .emotion-visual {
+      margin-bottom: 1rem;
+    }
+
+    .emotion-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      margin: 0 auto 1rem;
     }
 
-    .emotion-name {
-      width: 80px;
-      font-weight: 500;
+    .emotion-emoji {
+      font-size: 1.8rem;
     }
 
     .emotion-bar {
-      flex: 1;
-      height: 20px;
-      background: #e1e8ed;
-      border-radius: 10px;
+      width: 100%;
+      height: 6px;
+      background: #333333;
+      border-radius: 3px;
       overflow: hidden;
     }
 
     .emotion-fill {
       height: 100%;
-      transition: width 0.3s ease;
+      transition: width 0.8s ease;
     }
 
-    .emotion-value {
-      width: 40px;
-      text-align: right;
+    .emotion-card h4 {
+      font-size: 1rem;
+      margin: 1rem 0 0.5rem;
+    }
+
+    .emotion-card p {
+      font-size: 1.2rem;
       font-weight: bold;
+      color: #ffffff;
     }
 
-    .insights-list, .recommendations-list {
-      list-style: none;
-      padding: 0;
+    .insights-grid, .recommendations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
     }
 
-    .insight-item, .recommendation-item {
+    .insight-card {
+      background: #222222;
+      border-radius: 12px;
+      padding: 1.5rem;
       display: flex;
       align-items: flex-start;
-      gap: 10px;
-      margin-bottom: 12px;
-      padding: 8px;
-      background: #f8f9fa;
-      border-radius: 8px;
+      gap: 1rem;
     }
 
-    .actions {
+    .insight-number {
+      width: 32px;
+      height: 32px;
+      background: #e50914;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .insight-content p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .recommendation-card {
+      background: #222222;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .recommendation-icon {
+      font-size: 1.5rem;
+    }
+
+    .recommendation-content p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .action-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.85rem;
+    }
+
+    .action-btn:hover {
+      background: rgba(229, 9, 20, 0.3);
+      border-color: #e50914;
+    }
+
+    .action-section {
       display: flex;
       justify-content: center;
-      gap: 15px;
+      gap: 1.5rem;
+      margin-top: 3rem;
     }
 
-    .btn {
-      padding: 12px 24px;
+    .netflix-btn {
+      padding: 0.875rem 2rem;
       border: none;
       border-radius: 8px;
-      font-weight: 500;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
     }
 
-    .btn.primary {
-      background: #007bff;
+    .netflix-btn.primary {
+      background: #e50914;
       color: white;
     }
 
-    .btn.secondary {
-      background: #6c757d;
-      color: white;
+    .netflix-btn.primary:hover {
+      background: #f40612;
+      transform: translateY(-2px);
     }
 
-    .loading-container {
+    .netflix-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .netflix-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .netflix-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #141414;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 400px;
+      z-index: 9999;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #007bff;
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-content h2 {
+      font-size: 1.5rem;
+      margin: 1rem 0 0.5rem 0;
+    }
+
+    .loading-content p {
+      font-size: 1rem;
+      color: #b3b3b3;
+    }
+
+    .netflix-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(229, 9, 20, 0.2);
+      border-top: 4px solid #e50914;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+      margin: 0 auto 1.5rem;
     }
 
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    @media (max-width: 768px) {
+      .content-container {
+        padding: 0 1rem 2rem;
+      }
+
+      .target-title {
+        font-size: 2rem;
+      }
+
+      .sentiment-emoji {
+        font-size: 2.5rem;
+      }
+
+      .sentiment-text {
+        font-size: 1.5rem;
+      }
+
+      .action-section {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .emotions-scroll {
+        flex-direction: column;
+      }
+
+      .insights-grid, .recommendations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .emotion-card {
+        min-width: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-content {
+        padding: 0 1rem;
+      }
+
+      .target-title {
+        font-size: 1.75rem;
+      }
+
+      .row-title {
+        font-size: 1.25rem;
+      }
+
+      .netflix-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+      }
+    }
   `]
 })
-export class SentimentResultsComponent implements OnInit {
+export class SentimentResultsComponent implements OnInit, OnDestroy {
   results: any = null;
   loading: boolean = true;
   target: string = '';
+  loadingTarget: string = '';
+  private routerSubscription?: Subscription;
+  private storageKey = `sentiment_${Date.now()}`; 
 
   constructor(private router: Router) {}
 
   ngOnInit() {
+    console.log('🎭 SentimentResultsComponent initialized');
+    
+    // Listen to router events to detect new navigation
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        console.log('🔄 Navigation detected, reloading data...');
+        this.loadResults();
+      });
+
+    // Initial load
+    this.loadResults();
+  }
+
+  ngOnDestroy() {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+  }
+
+  private loadResults() {
+    this.loading = true;
+    
+    // Get the latest target being analyzed
+    const currentTarget = localStorage.getItem('sentimentTarget');
+    if (currentTarget) {
+      this.loadingTarget = currentTarget;
+    }
+    
+    // Add a small delay to show loading state
     setTimeout(() => {
       const storedResult = localStorage.getItem('sentimentResult');
       const storedTarget = localStorage.getItem('sentimentTarget');
       
-      if (storedResult) {
+      console.log('📊 Loading stored result:', storedResult);
+      console.log('🎯 Loading stored target:', storedTarget);
+      
+      if (storedResult && storedTarget) {
         try {
           this.results = JSON.parse(storedResult);
-          this.target = storedTarget || 'Unknown';
-          console.log('Sentiment results loaded:', this.results);
+          this.target = storedTarget;
+          console.log('✅ Successfully loaded results for:', this.target);
         } catch (error) {
-          console.error('Error parsing sentiment results:', error);
+          console.error('❌ Error parsing results:', error);
           this.results = this.getMockResults();
+          this.target = 'Demo Target';
         }
       } else {
+        console.log('📊 No stored results found, using mock data');
         this.results = this.getMockResults();
+        this.target = 'Demo Target';
       }
       
       this.loading = false;
-    }, 1000);
+    }, 1500);
   }
 
   getMockResults() {
     return {
-      confidenceScore: 85,
+      confidenceScore: 87,
       overallSentiment: 'positive',
       emotions: {
-        joy: 65,
-        sadness: 10,
-        anger: 5,
+        joy: 70,
+        sadness: 8,
+        anger: 12,
         fear: 15,
-        surprise: 25
+        surprise: 35
       },
       insights: [
-        "Strong positive sentiment detected across social platforms",
-        "High engagement and enthusiasm in community discussions",
-        "Users appreciate the innovative features and reliability"
+        "Overwhelmingly positive sentiment across all platforms",
+        "High emotional engagement with strong joy indicators",
+        "Community shows genuine enthusiasm and support"
       ],
       recommendations: [
-        "Continue monitoring social sentiment to maintain positive perception",
-        "Engage with community feedback to address minor concerns",
-        "Leverage positive sentiment in marketing campaigns"
+        "Leverage positive sentiment in upcoming marketing campaigns",
+        "Engage more actively with the enthusiastic community",
+        "Monitor sentiment during major announcements for optimal timing"
       ]
     };
   }
 
   getSentimentEmoji(sentiment: string): string {
-    switch(sentiment) {
+    switch(sentiment?.toLowerCase()) {
       case 'positive': return '😊';
       case 'negative': return '😞';
       case 'neutral': return '😐';
@@ -306,8 +560,20 @@ export class SentimentResultsComponent implements OnInit {
     }
   }
 
+  getEmotionEmoji(emotion: string): string {
+    const emojis: {[key: string]: string} = {
+      joy: '😊',
+      sadness: '😢',
+      anger: '😠',
+      fear: '😨',
+      surprise: '😲'
+    };
+    return emojis[emotion] || '😐';
+  }
+
   getEmotionEntries() {
-    return Object.entries(this.results.emotions || {}).map(([name, value]) => ({
+    if (!this.results?.emotions) return [];
+    return Object.entries(this.results.emotions).map(([name, value]) => ({
       name,
       value: value as number
     }));
@@ -315,18 +581,31 @@ export class SentimentResultsComponent implements OnInit {
 
   getEmotionColor(emotion: string): string {
     const colors: {[key: string]: string} = {
-      joy: '#f1c40f',
-      sadness: '#3498db',
-      anger: '#e74c3c',
-      fear: '#9b59b6',
-      surprise: '#e67e22'
+      joy: '#ffd700',
+      sadness: '#4fc3f7',
+      anger: '#f44336',
+      fear: '#9c27b0',
+      surprise: '#ff9800'
     };
-    return colors[emotion] || '#95a5a6';
+    return colors[emotion] || '#9e9e9e';
+  }
+
+  getEmotionGradient(emotion: string): string {
+    const gradients: {[key: string]: string} = {
+      joy: 'linear-gradient(135deg, #ffd700, #ffb300)',
+      sadness: 'linear-gradient(135deg, #4fc3f7, #2196f3)',
+      anger: 'linear-gradient(135deg, #f44336, #d32f2f)',
+      fear: 'linear-gradient(135deg, #9c27b0, #7b1fa2)',
+      surprise: 'linear-gradient(135deg, #ff9800, #f57c00)'
+    };
+    return gradients[emotion] || 'linear-gradient(135deg, #9e9e9e, #757575)';
   }
 
   analyzeAnother() {
+    // Clear old data before navigating
     localStorage.removeItem('sentimentResult');
     localStorage.removeItem('sentimentTarget');
+    console.log('🧹 Cleared old data, navigating to new analysis...');
     this.router.navigate(['/sentiment']);
   }
 
