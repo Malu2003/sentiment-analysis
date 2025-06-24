@@ -36,7 +36,7 @@ A full-stack application that analyzes public sentiment about any topic, brand, 
 
 <div align="center">
 
-#### 🏠 Landing Page - Sentimental Analysis 
+#### 🏠 Landing Page - Sentiment Analysis 
 <img src="screenshots/landing.png" alt="Resume Screening Landing Page" width="800"/>
 
 
