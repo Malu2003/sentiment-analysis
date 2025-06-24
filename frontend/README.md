@@ -150,6 +150,27 @@ sequenceDiagram
 </table>
 
 ---
+## 📸 **Application Screenshots**
+
+### 🎯 **Complete User Journey**
+
+<div align="center">
+
+#### **🏠 Landing Page - Sentimental Analysis **
+<img src="screenshots/landing.png" alt="Resume Screening Landing Page" width="800"/>
+<br><i>Clean, professional interface with clear call-to-action for resume analysis</i>
+
+#### **⚡ Processing State **
+<img src="screenshots/processing.png" alt="AI Processing Animation" width="800"/>
+<br><i>Loading animation with progress indicators during AI analysis</i>
+
+---
+
+#### **📊 Analysis Results - Comprehensive Sentiment Dashboard**
+<img src="screenshots/results.png" alt="Resume Analysis Results" width="800"/>
+<br><i>Detailed analysis with match score, strengths, weaknesses, and keyword analysis</i>
+
+</div>
 
 ## 🚀 **Quick Start Guide**
 
